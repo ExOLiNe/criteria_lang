@@ -41,6 +41,16 @@ class Interpreter : Grammar<Type>() {
     private val minusToken by literalToken("-")
     private val mulToken by literalToken("*")
     private val divToken by literalToken("/")
+    private val trueParser by literalToken("true").map {
+        { it: VarType ->
+            Expr.Bool(true)
+        }
+    }
+    private val falseParser by literalToken("false").map {
+        { it: VarType ->
+            Expr.Bool(false)
+        }
+    }
 
     private val varAccessParser: Parser<(VarType) -> Expr> by parser {
         varName()
@@ -109,7 +119,7 @@ class Interpreter : Grammar<Type>() {
 
     private val arithmeticExpr by addOrSubExpr
 
-    private val term by stringParser or arithmeticExpr
+    private val term by stringParser or arithmeticExpr or trueParser or falseParser
 
     private val inArrayExpr by parser {
         split(string or number, comma, true, true).map {
@@ -161,7 +171,7 @@ class Interpreter : Grammar<Type>() {
         function
     }
 
-    private val boolExpr by compareBoolExpr or inArrayBoolExpr
+    private val boolExpr by compareBoolExpr or inArrayBoolExpr or varAccessParser
 
     private val andChain by leftAssociative(boolExpr, andToken) { l, r ->
         { it: VarType ->
@@ -174,7 +184,7 @@ class Interpreter : Grammar<Type>() {
         }
     }
 
-    private val expr by orChain or boolExpr
+    private val expr by orChain
 
     override val root: Parser<Type> by parser {
         val result = expr()
