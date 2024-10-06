@@ -112,8 +112,12 @@ class MyGrammar : Grammar<Type>() {
     private val term by stringParser or arithmeticExpr
 
     private val inArrayExpr by parser {
-        split(string, comma, true, true).map {
-            it.text.trim('\'')
+        split(string or number, comma, true, true).map {
+            when(it.token) {
+                string -> it.text.trim('\'')
+                number -> it.text.toInt()
+                else -> throw IllegalStateException("IN_ARRAY_EXPRESSION: Must be string or number")
+            }
         }.toSet()
     }
 
