@@ -36,7 +36,9 @@ class Interpreter : Grammar<Type>() {
     private val andToken by literalToken("&&")
     private val orToken by literalToken("||")
     private val comma by literalToken(",")
-    private val inToken by literalToken("in")
+    private val inToken by (literalToken("in") or literalToken("!in")).map {
+        it.text == "in"
+    }
     private val plusToken by literalToken("+")
     private val minusToken by literalToken("-")
     private val mulToken by literalToken("*")
@@ -133,13 +135,13 @@ class Interpreter : Grammar<Type>() {
 
     private val inArrayBoolExpr by parser {
         val valueResolver = term()
-        inToken()
+        val isIn = inToken()
         sqBrL()
         val set = inArrayExpr()
         sqBrR()
         val function = { it: VarType ->
             val value = valueResolver(it)
-            Expr.Bool(set.contains(value.getValue()))
+            Expr.Bool(set.contains(value.getValue()).xor(!isIn))
         }
         function
     }

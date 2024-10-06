@@ -12,7 +12,6 @@ object['some'] in ['val1', 'val2', 'val3']
 - float numbers support
 - functions support
 - `in range` operator for numbers
-- `!in` operator
 - `contains` operator
 - `like`/`startsWith` operator for strings
 - `size` function for arrays
