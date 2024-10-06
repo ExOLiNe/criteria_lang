@@ -1,0 +1,6 @@
+{
+  "map": {
+    "some": "hello"
+  },
+  "expected": true
+}
