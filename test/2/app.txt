@@ -1,2 +1,0 @@
-object['some'] in ['hello', 'world']
-    && object['some'] == object['some2']

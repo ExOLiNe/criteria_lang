@@ -1,7 +1,0 @@
-{
-  "map": {
-    "some": "hello",
-    "some2": "hello"
-  },
-  "expected": true
-}

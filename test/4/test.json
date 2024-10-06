@@ -1,8 +1,0 @@
-{
-  "map": {
-    "some": "val1",
-    "someNum": 10,
-    "someNum2": 10
-  },
-  "expected": true
-}
