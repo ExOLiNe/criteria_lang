@@ -26,24 +26,28 @@ class MyGrammar : Grammar<Type>() {
         regexToken("\\s+", ignored = true)
     }
 
-    val varName by literalToken("object")
-    val sqBrL by literalToken("[")
-    val sqBrR by literalToken("]")
-    val areEqual by literalToken("==")
-    val areNotEqual by literalToken("!=")
-    val string by regexToken("\'[a-zA-Z0-9]+\'")
-    val number by regexToken("[0-9]+")
-    val andToken by literalToken("&&")
-    val orToken by literalToken("||")
-    val comma by literalToken(",")
-    val inToken by literalToken("in")
+    private val varName by literalToken("object")
+    private val sqBrL by literalToken("[")
+    private val sqBrR by literalToken("]")
+    private val areEqual by literalToken("==")
+    private val areNotEqual by literalToken("!=")
+    private val string by regexToken("\'[a-zA-Z0-9]+\'")
+    private val number by regexToken("[0-9]+")
+    private val andToken by literalToken("&&")
+    private val orToken by literalToken("||")
+    private val comma by literalToken(",")
+    private val inToken by literalToken("in")
+    private val plusToken by literalToken("+")
+    private val minusToken by literalToken("-")
+    private val mulToken by literalToken("*")
+    private val divToken by literalToken("/")
 
-    val varAccessParser: Parser<(VarType) -> Expr> by parser {
+    private val varAccessParser: Parser<(VarType) -> Expr> by parser {
         varName()
         sqBrL()
         val field = string().text.drop(1).dropLast(1)
-        sqBrR();
-        { it: VarType ->
+        sqBrR()
+        val function = { it: VarType ->
             val value = it[field]!!.jsonPrimitive
             when {
                 value.intOrNull != null -> Expr.Num(value.jsonPrimitive.int)
@@ -52,29 +56,72 @@ class MyGrammar : Grammar<Type>() {
                 else -> throw RuntimeException("Unknown type")
             }
         }
+        function
     }
 
-    val stringParser: Parser<(VarType) -> Expr> by string.map {
+    private val stringParser: Parser<(VarType) -> Expr> by string.map {
         { _: VarType ->
             Expr.Str(it.text.trim('\''))
         }
     }
 
-    val numberParser: Parser<(VarType) -> Expr> by number.map {
+    private val numberParser: Parser<(VarType) -> Expr> by number.map {
         { _: VarType ->
             Expr.Num(it.text.toInt())
         }
     }
 
-    val term by varAccessParser or stringParser or numberParser
+    private val mulOrDivExpr by leftAssociative(
+        (varAccessParser or numberParser),
+        (mulToken or divToken)
+    ) { l, op, r ->
+        val operation: (Number, Number) -> Number = if (op.token == mulToken) {
+            Number::times
+        } else {
+            Number::div
+        }
+        val function = { it: VarType ->
+             Expr.Num(operation(
+                 l(it).getValue() as Number,
+                 r(it).getValue() as Number)
+             )
+        }
+        function
+    }
 
-    val inArrayBoolExpr by parser {
+    private val addOrSubExpr by leftAssociative(
+        mulOrDivExpr,
+        plusToken or minusToken
+    ) { l, op, r ->
+        val operation: (Number, Number) -> Number = if (op.token == plusToken) {
+            Number::plus
+        } else {
+            Number::minus
+        }
+        val function = { it: VarType ->
+            Expr.Num(operation(
+                l(it).getValue() as Number,
+                r(it).getValue() as Number)
+            )
+        }
+        function
+    }
+
+    private val arithmeticExpr by addOrSubExpr
+
+    private val term by stringParser or arithmeticExpr
+
+    private val inArrayExpr by parser {
+        split(string, comma, true, true).map {
+            it.text.trim('\'')
+        }.toSet()
+    }
+
+    private val inArrayBoolExpr by parser {
         val valueResolver = term()
         inToken()
         sqBrL()
-        val set = split(string, comma, true, true).map {
-            it.text.trim('\'')
-        }.toSet()
+        val set = inArrayExpr()
         sqBrR()
         val function = { it: VarType ->
             val value = valueResolver(it)
@@ -83,12 +130,12 @@ class MyGrammar : Grammar<Type>() {
         function
     }
 
-    val compareBoolExpr: Parser<(VarType) -> Expr> by parser {
+    private val compareBoolExpr: Parser<(VarType) -> Expr> by parser {
         val l = term()
         val compare = (areEqual or areNotEqual).map {
-            when(it.token.name) {
-                areEqual.name -> { l: Any, r: Any -> l == r}
-                areNotEqual.name -> { l: Any, r: Any -> l != r}
+            when(it.token) {
+                areEqual -> { l: Any, r: Any -> l == r}
+                areNotEqual -> { l: Any, r: Any -> l != r}
                 else -> throw IllegalStateException()
             }
         }()
@@ -110,31 +157,20 @@ class MyGrammar : Grammar<Type>() {
         function
     }
 
-    val boolExpr by compareBoolExpr or inArrayBoolExpr
+    private val boolExpr by compareBoolExpr or inArrayBoolExpr
 
-    /*val andExpr by parser {
-        val l = boolExpr()
-        orToken()
-        val r = boolExpr()
-        val function = { it: VarType ->
-            val lValue = (l(it) as Expr.Bool).value
-            val rValue = (r(it) as Expr.Bool).value
-            Expr.Bool(lValue && rValue)
-        }
-        function
-    }*/
-    val andChain by leftAssociative(boolExpr, andToken) { l, r ->
+    private val andChain by leftAssociative(boolExpr, andToken) { l, r ->
         { it: VarType ->
             l(it) and r(it)
         }
     }
-    val orChain by leftAssociative(andChain, orToken) { l, r ->
+    private val orChain by leftAssociative(andChain, orToken) { l, r ->
         { it: VarType ->
             l(it) or r(it)
         }
     }
 
-    val expr by orChain or boolExpr
+    private val expr by orChain or boolExpr
 
     override val root: Parser<Type> by parser {
         val result = expr()
