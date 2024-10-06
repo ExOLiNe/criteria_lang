@@ -21,7 +21,7 @@ sealed class Expr {
     }
 }
 
-class MyGrammar : Grammar<Type>() {
+class Interpreter : Grammar<Type>() {
     init {
         regexToken("\\s+", ignored = true)
     }
