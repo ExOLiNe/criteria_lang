@@ -3,7 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.jvm") version "1.8.22"
 }
 
-group = "org.example"
+group = "com.exoline"
 version = "1.0-SNAPSHOT"
 
 repositories {
@@ -21,9 +21,4 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
-}
-
-sourceSets["main"].kotlin {
-    srcDir("src/main/kotlin")
-    //srcDir("src/parsus/kotlin")
 }
