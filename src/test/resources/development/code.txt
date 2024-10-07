@@ -1,1 +1,1 @@
-object['some']
+size([10, 20, 30])
