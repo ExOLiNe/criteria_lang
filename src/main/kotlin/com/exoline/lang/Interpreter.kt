@@ -33,37 +33,26 @@ class Interpreter : Grammar<Type>() {
     private val andToken by literalToken("&&")
     private val orToken by literalToken("||")
     private val comma by literalToken(",")
-    private val inToken by (literalToken("in") or literalToken("!in")).map {
-        it.text == "in"
-    }
+    private val inToken by (literalToken("in") or literalToken("!in")) map { it.text == "in" }
     private val plusToken by literalToken("+")
     private val minusToken by literalToken("-")
     private val mulToken by literalToken("*")
     private val divToken by literalToken("/")
-    private val trueParser by literalToken("true").map {
-        { it: VarType ->
-            true
-        }
-    }
-    private val falseParser by literalToken("false").map {
-        { it: VarType ->
-            false
-        }
-    }
+
+    private val trueParser by literalToken("true") mapToLambda(true)
+    private val falseParser by literalToken("false") mapToLambda(false)
 
     // function tokens
     private val sizeFunction: Parser<(List<Set<Any>>) -> (VarType) -> Any> by literalToken("size").map {
         { it: List<Set<Any>> ->
-            { _: VarType ->
-                it.first().size
-            }
+            it.first().size.toLambda()
         }
     }
     // end of function tokens
 
     private fun functionCall(
         funcToken: Parser<(List<Any>) -> (VarType) -> Any>,
-        argumentsParser: Parser<List<(VarType) ->Any>>
+        argumentsParser: Parser<List<(VarType) -> Any>>
     ): Parser<(VarType) -> Any> = parser {
         val func = funcToken()
         braceL()
@@ -95,17 +84,9 @@ class Interpreter : Grammar<Type>() {
         function
     }
 
-    private val stringParser: Parser<(VarType) -> Any> by string.map {
-        { _: VarType ->
-            it
-        }
-    }
+    private val stringParser: Parser<(VarType) -> Any> by string.mapToLambda()
 
-    private val numberParser: Parser<(VarType) -> Any> by number.map {
-        { _: VarType ->
-            it
-        }
-    }
+    private val numberParser: Parser<(VarType) -> Any> by number.mapToLambda()
 
     private val mulOrDivExpr by leftAssociative(
         (varAccessParser or numberParser),
@@ -148,24 +129,22 @@ class Interpreter : Grammar<Type>() {
     private val term by stringParser or arithmeticExpr or trueParser or falseParser
 
     private val arrayExpr by parser {
-        sqBrL()
         val value = split(
             string or number,
             comma,
             allowEmpty = true,
             trailingSeparator = true
         ).toSet()
-        sqBrR()
         value
-    }
+    }.between(sqBrL, sqBrR)
 
     private val inArrayBoolExpr by parser {
-        val valueResolver = term()
+        val leftResolver = term()
         val isIn = inToken()
-        val set = arrayExpr()
+        val right = arrayExpr()
         val function = { it: VarType ->
-            val value = valueResolver(it)
-            set.contains(value).xor(!isIn)
+            val left = leftResolver(it)
+            (left in right) xor !isIn
         }
         function
     }
@@ -188,6 +167,8 @@ class Interpreter : Grammar<Type>() {
         }
     })
 
+    // private val strLengthCallParser = functionCall(sizeFunction, a)
+
     private val boolExpr by compareBoolExpr or inArrayBoolExpr or varAccessParser
 
     private val andChain by leftAssociative(boolExpr, andToken) { l, r ->
@@ -205,7 +186,7 @@ class Interpreter : Grammar<Type>() {
 
     override val root: Parser<Type> by parser {
         val result = expr()
-        val function: Type = { it: VarType ->
+        val function: Type = { it ->
             val value = result(it)
             if (value !is Boolean) {
                 throw RuntimeException("OMG!")

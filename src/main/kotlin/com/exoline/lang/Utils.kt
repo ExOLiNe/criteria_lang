@@ -1,6 +1,17 @@
 package com.exoline.lang
 
-fun Number.plus(other: Number): Number {
+import me.alllex.parsus.parser.Parser
+import me.alllex.parsus.parser.map
+
+inline infix fun <reified T, reified P> Parser<T>.mapToLambda(value: P): Parser<(VarType) -> P> = map {
+    value.toLambda()
+}
+inline fun <reified T> Parser<T>.mapToLambda(): Parser<(VarType) -> T> = map {
+    it.toLambda()
+}
+inline fun <reified T>T.toLambda(): (VarType) -> T = { _: VarType -> this }
+
+infix fun Number.plus(other: Number): Number {
     return when(this) {
         is Int -> when (other) {
             is Int -> this + other
@@ -10,7 +21,7 @@ fun Number.plus(other: Number): Number {
     }
 }
 
-fun Number.minus(other: Number): Number {
+infix fun Number.minus(other: Number): Number {
     return when(this) {
         is Int -> when (other) {
             is Int -> this - other
@@ -20,7 +31,7 @@ fun Number.minus(other: Number): Number {
     }
 }
 
-fun Number.times(other: Number): Number {
+infix fun Number.times(other: Number): Number {
     return when(this) {
         is Int -> when (other) {
             is Int -> this * other
@@ -30,7 +41,7 @@ fun Number.times(other: Number): Number {
     }
 }
 
-fun Number.div(other: Number): Number {
+infix fun Number.div(other: Number): Number {
     return when(this) {
         is Int -> when (other) {
             is Int -> this / other
