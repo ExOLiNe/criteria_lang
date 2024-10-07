@@ -8,22 +8,6 @@ import me.alllex.parsus.token.regexToken
 typealias VarType = JsonObject
 typealias Type = (VarType) -> Boolean
 
-sealed class Expr {
-    abstract fun getValue(): Any
-    data class Str(val value: String) : Expr() {
-        override fun getValue(): Any = value
-    }
-    data class Num(val value: Number) : Expr() {
-        override fun getValue(): Any = value
-    }
-    data class Bool(val value: Boolean): Expr() {
-        override fun getValue(): Any = value
-    }
-    data class Array(val value: Set<Any>): Expr() {
-        override fun getValue(): Any = value
-    }
-}
-
 class Interpreter : Grammar<Type>() {
     init {
         regexToken("\\s+", ignored = true)
@@ -58,43 +42,43 @@ class Interpreter : Grammar<Type>() {
     private val divToken by literalToken("/")
     private val trueParser by literalToken("true").map {
         { it: VarType ->
-            Expr.Bool(true)
+            true
         }
     }
     private val falseParser by literalToken("false").map {
         { it: VarType ->
-            Expr.Bool(false)
+            false
         }
     }
 
     // function tokens
-    private val sizeFunction: Parser<(List<Set<Any>>) -> (VarType) -> Expr> by literalToken("size").map {
+    private val sizeFunction: Parser<(List<Set<Any>>) -> (VarType) -> Any> by literalToken("size").map {
         { it: List<Set<Any>> ->
             { _: VarType ->
-                Expr.Num(it.first().size)
+                it.first().size
             }
         }
     }
     // end of function tokens
 
     private fun functionCall(
-        funcToken: Parser<(List<Any>) -> (VarType) -> Expr>,
-        argumentsParser: Parser<List<(VarType) ->Expr>>
-    ): Parser<(VarType) -> Expr> = parser {
+        funcToken: Parser<(List<Any>) -> (VarType) -> Any>,
+        argumentsParser: Parser<List<(VarType) ->Any>>
+    ): Parser<(VarType) -> Any> = parser {
         val func = funcToken()
         braceL()
         val argumentsResolvers = argumentsParser()
         braceR()
         val function = { it: VarType ->
             val arguments = argumentsResolvers.map { arg ->
-                arg(it).getValue()
+                arg(it)
             }
             func(arguments)(it)
         }
         function
     }
 
-    private val varAccessParser: Parser<(VarType) -> Expr> by parser {
+    private val varAccessParser: Parser<(VarType) -> Any> by parser {
         varName()
         sqBrL()
         val field = string()
@@ -102,24 +86,24 @@ class Interpreter : Grammar<Type>() {
         val function = { it: VarType ->
             val value = it[field]!!.jsonPrimitive
             when {
-                value.intOrNull != null -> Expr.Num(value.jsonPrimitive.int)
-                value.isString -> Expr.Str(value.content)
-                value.booleanOrNull != null -> Expr.Bool(value.boolean)
+                value.intOrNull != null -> value.jsonPrimitive.int
+                value.isString -> value.content
+                value.booleanOrNull != null -> value.boolean
                 else -> throw RuntimeException("Unknown type")
             }
         }
         function
     }
 
-    private val stringParser: Parser<(VarType) -> Expr> by string.map {
+    private val stringParser: Parser<(VarType) -> Any> by string.map {
         { _: VarType ->
-            Expr.Str(it)
+            it
         }
     }
 
-    private val numberParser: Parser<(VarType) -> Expr> by number.map {
+    private val numberParser: Parser<(VarType) -> Any> by number.map {
         { _: VarType ->
-            Expr.Num(it)
+            it
         }
     }
 
@@ -133,9 +117,9 @@ class Interpreter : Grammar<Type>() {
             Number::div
         }
         val function = { it: VarType ->
-             Expr.Num(operation(
-                 l(it).getValue() as Number,
-                 r(it).getValue() as Number)
+             operation(
+                 l(it) as Number,
+                 r(it) as Number
              )
         }
         function
@@ -151,9 +135,9 @@ class Interpreter : Grammar<Type>() {
             Number::minus
         }
         val function = { it: VarType ->
-            Expr.Num(operation(
-                l(it).getValue() as Number,
-                r(it).getValue() as Number)
+            operation(
+                l(it) as Number,
+                r(it) as Number
             )
         }
         function
@@ -181,35 +165,26 @@ class Interpreter : Grammar<Type>() {
         val set = arrayExpr()
         val function = { it: VarType ->
             val value = valueResolver(it)
-            Expr.Bool(set.contains(value.getValue()).xor(!isIn))
+            set.contains(value).xor(!isIn)
         }
         function
     }
 
-    private val compareBoolExpr: Parser<(VarType) -> Expr> by parser {
+    private val compareBoolExpr: Parser<(VarType) -> Any> by parser {
         val l = term()
         val compare = (areEqual or areNotEqual)()
         val r = term()
         val function = { it: VarType ->
             val lValue = l(it)
             val rValue = r(it)
-            val value = if (lValue is Expr.Str && rValue is Expr.Str) {
-                compare(lValue.value, rValue.value)
-            } else if (lValue is Expr.Num && rValue is Expr.Num) {
-                compare(lValue.value, rValue.value)
-            } else if(lValue is Expr.Bool && rValue is Expr.Bool) {
-                compare(lValue.value, rValue.value)
-            } else {
-                false
-            }
-            Expr.Bool(value)
+            compare(lValue, rValue)
         }
         function
     }
 
-    private val sizeCallParser = functionCall(sizeFunction as Parser<(List<Any>) -> (VarType) -> Expr>, arrayExpr.map { array ->
+    private val sizeCallParser = functionCall(sizeFunction as Parser<(List<Any>) -> (VarType) -> Any>, arrayExpr.map { array ->
         listOf { it: VarType ->
-            Expr.Array(array)
+            array
         }
     })
 
@@ -217,12 +192,12 @@ class Interpreter : Grammar<Type>() {
 
     private val andChain by leftAssociative(boolExpr, andToken) { l, r ->
         { it: VarType ->
-            l(it) and r(it)
+            (l(it) as Boolean) && (r(it) as Boolean)
         }
     }
     private val orChain by leftAssociative(andChain, orToken) { l, r ->
         { it: VarType ->
-            l(it) or r(it)
+            (l(it) as Boolean) || (r(it) as Boolean)
         }
     }
 
@@ -230,12 +205,12 @@ class Interpreter : Grammar<Type>() {
 
     override val root: Parser<Type> by parser {
         val result = expr()
-        val function = { it: VarType ->
+        val function: Type = { it: VarType ->
             val value = result(it)
-            if (value !is Expr.Bool) {
+            if (value !is Boolean) {
                 throw RuntimeException("OMG!")
             }
-            value.value
+            value
         }
         function
     }
