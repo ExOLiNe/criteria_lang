@@ -12,7 +12,7 @@ class DevelopmentTest {
         val interpreter = Interpreter()
         val app = interpreter.parseOrThrow(getFile("development/code.txt").readText())
         val map = JsonObject(
-            mapOf("some" to JsonPrimitive(true))
+            mapOf("some" to JsonPrimitive(10))
         )
         println(app(map))
     }

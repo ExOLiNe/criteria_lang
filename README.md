@@ -8,7 +8,6 @@ object['some'] in ['val1', 'val2', 'val3']
 
 ## TODO
 - braces support
-- float numbers support
 - functions support
 - `in range` operator for numbers
 - `contains` operator

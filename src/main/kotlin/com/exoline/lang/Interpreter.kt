@@ -41,12 +41,13 @@ class Interpreter : Grammar<Type>() {
     private val string by regexToken("\'[a-zA-Z0-9]+\'").map {
         it.text.trim('\'')
     }
-    private val number by regexToken("[0-9]+").map {
+    private val digitsToken by regexToken("[0-9]+").map {
         it.text.toInt()
     }
     private val andToken by literalToken("&&")
     private val orToken by literalToken("||")
     private val comma by literalToken(",")
+    private val dot by literalToken(".").map { it.text }
     private val inToken by (literalToken("in") or literalToken("!in"))
         .map { it.text == "in" }
     private val plusToken by literalToken("+")
@@ -104,10 +105,15 @@ class Interpreter : Grammar<Type>() {
 
     private val stringParser: Parser<(VarType) -> Any> by string.mapToLambda()
 
-    private val numberParser: Parser<(VarType) -> Any> by number.mapToLambda()
+    private val doubleParser by
+        (digitsToken and dot and digitsToken).map {
+            "${it.t1}.${it.t3}".toDouble()
+        }
+
+    private val numberParser by doubleParser or digitsToken
 
     private val mulOrDivExpr by leftAssociative(
-        (varAccessParser or numberParser),
+        (varAccessParser or numberParser.mapToLambda()),
         (mulToken or divToken)
     ) { l, op, r ->
         val operation: (Number, Number) -> Number = if (op.token == mulToken) {
@@ -148,7 +154,7 @@ class Interpreter : Grammar<Type>() {
 
     private val arrayExpr by parser {
         val value = split(
-            string or number,
+            string or numberParser,
             comma,
             allowEmpty = true,
             trailingSeparator = true

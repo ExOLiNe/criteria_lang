@@ -24,6 +24,8 @@ class InterpreterTest {
                     Assertions.assertEquals(expected, actual, "Test#${it.name} failed. Actual: ${actual}. Expected: $expected")
                 } catch(ex: ParseException) {
                     throw Exception("Test#${it.name} failed with parse exception", ex)
+                } catch(ex: Exception) {
+                    throw Exception("Test#${it.name} failed with exception", ex)
                 }
             }
         } ?: throw Exception("Where are files, Carl?")
