@@ -2,11 +2,13 @@ package com.exoline.lang
 
 import kotlinx.serialization.json.*
 import me.alllex.parsus.parser.*
+import me.alllex.parsus.token.LiteralToken
 import me.alllex.parsus.token.literalToken
 import me.alllex.parsus.token.regexToken
 
 typealias VarType = JsonObject
 typealias Type = (VarType) -> Boolean
+typealias Arguments = List<Any>
 
 class Interpreter : Grammar<Type>() {
     init {
@@ -24,6 +26,18 @@ class Interpreter : Grammar<Type>() {
     private val areNotEqual by literalToken("!=").map {
         { l: Any, r: Any -> l != r }
     }
+    private val greaterThan by literalToken(">").map {
+        { l: Any, r: Any -> (l as Int) > (r as Int) }
+    }
+    private val greaterThanEquals by literalToken(">=").map {
+        { l: Any, r: Any -> (l as Int) >= (r as Int) }
+    }
+    private val lessThan by literalToken("<").map {
+        { l: Any, r: Any -> (l as Int) < (r as Int) }
+    }
+    private val lessThanEquals by literalToken("<=").map {
+        { l: Any, r: Any -> (l as Int) <= (r as Int) }
+    }
     private val string by regexToken("\'[a-zA-Z0-9]+\'").map {
         it.text.trim('\'')
     }
@@ -33,7 +47,8 @@ class Interpreter : Grammar<Type>() {
     private val andToken by literalToken("&&")
     private val orToken by literalToken("||")
     private val comma by literalToken(",")
-    private val inToken by (literalToken("in") or literalToken("!in")) map { it.text == "in" }
+    private val inToken by (literalToken("in") or literalToken("!in"))
+        .map { it.text == "in" }
     private val plusToken by literalToken("+")
     private val minusToken by literalToken("-")
     private val mulToken by literalToken("*")
@@ -43,26 +58,29 @@ class Interpreter : Grammar<Type>() {
     private val falseParser by literalToken("false") mapToLambda(false)
 
     // function tokens
-    private val sizeFunction: Parser<(List<Set<Any>>) -> (VarType) -> Any> by literalToken("size").map {
-        { it: List<Set<Any>> ->
-            it.first().size.toLambda()
-        }
-    }
+    private val sizeFunction by literalToken("size")
     // end of function tokens
 
     private fun functionCall(
-        funcToken: Parser<(List<Any>) -> (VarType) -> Any>,
-        argumentsParser: Parser<List<(VarType) -> Any>>
+        funcToken: LiteralToken,
+        vararg argumentsParser: Parser<(VarType) -> Any>,
+        body: (Arguments) -> Any
     ): Parser<(VarType) -> Any> = parser {
-        val func = funcToken()
+        val func = funcToken.map {
+            { args: Arguments ->
+                body(args)
+            }
+        }()
         braceL()
-        val argumentsResolvers = argumentsParser()
+        val argumentsResolvers = argumentsParser.map {
+            it()
+        }
         braceR()
         val function = { it: VarType ->
             val arguments = argumentsResolvers.map { arg ->
                 arg(it)
             }
-            func(arguments)(it)
+            func(arguments)
         }
         function
     }
@@ -151,7 +169,10 @@ class Interpreter : Grammar<Type>() {
 
     private val compareBoolExpr: Parser<(VarType) -> Any> by parser {
         val l = term()
-        val compare = (areEqual or areNotEqual)()
+        val compare = (
+                greaterThanEquals or lessThanEquals or
+                        lessThan or greaterThan or areEqual or areNotEqual
+                )()
         val r = term()
         val function = { it: VarType ->
             val lValue = l(it)
@@ -161,13 +182,19 @@ class Interpreter : Grammar<Type>() {
         function
     }
 
-    private val sizeCallParser = functionCall(sizeFunction as Parser<(List<Any>) -> (VarType) -> Any>, arrayExpr.map { array ->
-        listOf { it: VarType ->
-            array
-        }
-    })
+    private val sizeCallParser = functionCall(
+        sizeFunction,
+        arrayExpr.mapToLambda()
+    ) { args ->
+        (args.first() as Set<*>).size
+    }
 
-    // private val strLengthCallParser = functionCall(sizeFunction, a)
+    private val strLengthCallParser = functionCall(
+        sizeFunction,
+        stringParser
+    ) { args ->
+        (args.first() as String).length
+    }
 
     private val boolExpr by compareBoolExpr or inArrayBoolExpr or varAccessParser
 
