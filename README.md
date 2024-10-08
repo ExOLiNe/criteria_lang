@@ -7,7 +7,6 @@ object['some'] in ['val1', 'val2', 'val3']
 ```
 
 ## TODO
-- boolean operations (>, <, >=, <=)
 - braces support
 - float numbers support
 - functions support
