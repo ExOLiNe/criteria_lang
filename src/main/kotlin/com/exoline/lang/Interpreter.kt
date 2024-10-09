@@ -2,15 +2,19 @@ package com.exoline.lang
 
 import kotlinx.serialization.json.*
 import me.alllex.parsus.parser.*
-import me.alllex.parsus.token.LiteralToken
 import me.alllex.parsus.token.literalToken
 import me.alllex.parsus.token.regexToken
 
 typealias VarType = JsonObject
-typealias Type = (VarType) -> Boolean
+typealias F = (VarType) -> Any
+typealias BoolF = (VarType) -> Boolean
+typealias PF = Parser<F>
 typealias Arguments = List<Any>
 
-class Interpreter : Grammar<Type>() {
+class Interpreter : Grammar<BoolF>(
+    ignoreCase = false,
+    debugMode = true
+) {
     init {
         regexToken("\\s+", ignored = true)
     }
@@ -55,42 +59,29 @@ class Interpreter : Grammar<Type>() {
     private val mulToken by literalToken("*")
     private val divToken by literalToken("/")
 
-    private val trueParser by literalToken("true") mapToLambda(true)
-    private val falseParser by literalToken("false") mapToLambda(false)
+    private val trueParser by literalToken("true") mapToF(true)
+    private val falseParser by literalToken("false") mapToF(false)
 
-    // function tokens
-    private val sizeFunction by literalToken("size")
-    // end of function tokens
-
-    private fun functionCall(
-        funcToken: LiteralToken,
-        vararg argumentsParser: Parser<(VarType) -> Any>,
+    private fun Grammar<*>.functionCall(
+        funcToken: String,
+        vararg argumentsParser: PF,
         body: (Arguments) -> Any
-    ): Parser<(VarType) -> Any> = parser {
-        val func = funcToken.map {
-            { args: Arguments ->
-                body(args)
-            }
-        }()
-        braceL()
-        val argumentsResolvers = argumentsParser.map {
-            it()
-        }
-        braceR()
+    ): PF = -literalToken(funcToken) and
+            (-braceL and
+                    argumentsParser.toList().join(comma)
+                    and -braceR
+                    ).map { argResolvers ->
         val function = { it: VarType ->
-            val arguments = argumentsResolvers.map { arg ->
+            val arguments = argResolvers.map { arg ->
                 arg(it)
             }
-            func(arguments)
+            body(arguments)
         }
         function
     }
 
-    private val varAccessParser: Parser<(VarType) -> Any> by parser {
-        varName()
-        sqBrL()
-        val field = string()
-        sqBrR()
+    private val varAccessParser: PF
+        by -varName and (-sqBrL and string and -sqBrR).map { field ->
         val function = { it: VarType ->
             val value = it[field]!!.jsonPrimitive
             when {
@@ -103,7 +94,7 @@ class Interpreter : Grammar<Type>() {
         function
     }
 
-    private val stringParser: Parser<(VarType) -> Any> by string.mapToLambda()
+    private val stringParser: PF by string.mapToF()
 
     private val doubleParser by
         (digitsToken and dot and digitsToken).map {
@@ -112,8 +103,8 @@ class Interpreter : Grammar<Type>() {
 
     private val numberParser by doubleParser or digitsToken
 
-    private val mulOrDivExpr by leftAssociative(
-        (varAccessParser or numberParser.mapToLambda()),
+    private val mulOrDivExpr: PF by leftAssociative(
+        (varAccessParser or numberParser.mapToF()),
         (mulToken or divToken)
     ) { l, op, r ->
         val operation: (Number, Number) -> Number = if (op.token == mulToken) {
@@ -173,7 +164,7 @@ class Interpreter : Grammar<Type>() {
         function
     }
 
-    private val compareBoolExpr: Parser<(VarType) -> Any> by parser {
+    private val compareBoolExpr: PF by parser {
         val l = term()
         val compare = (
                 greaterThanEquals or lessThanEquals or
@@ -188,15 +179,15 @@ class Interpreter : Grammar<Type>() {
         function
     }
 
-    private val sizeCallParser = functionCall(
-        sizeFunction,
-        arrayExpr.mapToLambda()
+    private val sizeCallParser by functionCall(
+        "size",
+        arrayExpr.mapToF()
     ) { args ->
         (args.first() as Set<*>).size
     }
 
-    private val strLengthCallParser = functionCall(
-        sizeFunction,
+    private val strLengthCallParser by functionCall(
+        "size",
         stringParser
     ) { args ->
         (args.first() as String).length
@@ -217,9 +208,9 @@ class Interpreter : Grammar<Type>() {
 
     private val expr by orChain
 
-    override val root: Parser<Type> by parser {
+    override val root: Parser<BoolF> by parser {
         val result = expr()
-        val function: Type = { it ->
+        val function: BoolF = { it ->
             val value = result(it)
             if (value !is Boolean) {
                 throw RuntimeException("OMG!")
