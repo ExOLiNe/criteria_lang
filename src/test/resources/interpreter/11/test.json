@@ -1,0 +1,9 @@
+{
+  "map": {
+    "some": 5,
+    "some2": 15,
+    "someStr": "something",
+    "someStr2": "something3"
+  },
+  "expected": true
+}

@@ -63,3 +63,19 @@ infix fun Number.div(other: Number): Number {
         else -> TODO("Not implemented yet")
     }
 }
+
+operator fun Number.compareTo(other: Number): Int {
+    return when(this) {
+        is Int -> when (other) {
+            is Int -> this.compareTo(other)
+            is Double -> this.compareTo(other)
+            else -> TODO("Not implemented yet")
+        }
+        is Double -> when (other) {
+            is Int -> this.compareTo(other)
+            is Double -> this.compareTo(other)
+            else -> TODO("Not implemented yet")
+        }
+        else -> TODO("Not implemented yet")
+    }
+}

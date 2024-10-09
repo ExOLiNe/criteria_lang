@@ -1,9 +1,11 @@
 package com.exoline.lang
 
+import com.exoline.lang.parser.AbstractGrammar
+import com.exoline.lang.parser.ArithmeticParser
+import com.exoline.lang.parser.BooleanParser
 import kotlinx.serialization.json.*
 import me.alllex.parsus.parser.*
 import me.alllex.parsus.token.literalToken
-import me.alllex.parsus.token.regexToken
 
 typealias VarType = JsonObject
 typealias F = (VarType) -> Any
@@ -11,64 +13,10 @@ typealias BoolF = (VarType) -> Boolean
 typealias PF = Parser<F>
 typealias Arguments = List<Any>
 
-class Interpreter : Grammar<BoolF>(
-    ignoreCase = false,
+class Interpreter : AbstractGrammar<BoolF>(
     debugMode = true
 ) {
-    init {
-        regexToken("\\s+", ignored = true)
-    }
-
-    private val varName by literalToken("object")
-    private val sqBrL by literalToken("[")
-    private val sqBrR by literalToken("]")
-    private val parL by literalToken("(")
-    private val parR by literalToken(")")
-    private val areEqual by literalToken("==").map {
-        { l: Any, r: Any -> l == r }
-    }
-    private val areNotEqual by literalToken("!=").map {
-        { l: Any, r: Any -> l != r }
-    }
-    private val greaterThan by literalToken(">").map {
-        { l: Any, r: Any -> (l as Int) > (r as Int) }
-    }
-    private val greaterThanEquals by literalToken(">=").map {
-        { l: Any, r: Any -> (l as Int) >= (r as Int) }
-    }
-    private val lessThan by literalToken("<").map {
-        { l: Any, r: Any -> (l as Int) < (r as Int) }
-    }
-    private val lessThanEquals by literalToken("<=").map {
-        { l: Any, r: Any -> (l as Int) <= (r as Int) }
-    }
-    private val quote by literalToken("'")
-    private val doubleQuote by literalToken("\"")
-    private val string by regexToken("[a-zA-Z0-9]+")
-    private val stringLiteral by (
-            (-quote and string and -quote)
-        or (-doubleQuote and string and -doubleQuote)
-    ).map {
-        it.text
-    }
-    private val digitsToken by regexToken("[0-9]+").map {
-        it.text.toInt()
-    }
-    private val andToken by literalToken("&&")
-    private val orToken by literalToken("||")
-    private val comma by literalToken(",")
-    private val dot by literalToken(".").map { it.text }
-    private val inToken by (literalToken("in") or literalToken("!in"))
-        .map { it.text == "in" }
-    private val plusToken by literalToken("+")
-    private val minusToken by literalToken("-")
-    private val mulToken by literalToken("*")
-    private val divToken by literalToken("/")
-
-    private val trueParser by literalToken("true") mapToF(true)
-    private val falseParser by literalToken("false") mapToF(false)
-
-    private fun Grammar<*>.functionCall(
+    private fun functionCall(
         funcToken: String,
         vararg argumentsParser: PF,
         body: (Arguments) -> Any
@@ -102,52 +50,7 @@ class Interpreter : Grammar<BoolF>(
 
     private val stringParser: PF by stringLiteral.mapToF()
 
-    private val doubleParser by
-        (digitsToken and dot and digitsToken).map {
-            "${it.t1}.${it.t3}".toDouble()
-        }
-
-    private val numberParser by doubleParser or digitsToken
-
-    private val mulOrDivExpr: PF by leftAssociative(
-        (varAccessParser or numberParser.mapToF()),
-        (mulToken or divToken)
-    ) { l, op, r ->
-        val operation: (Number, Number) -> Number = if (op.token == mulToken) {
-            Number::times
-        } else {
-            Number::div
-        }
-        val function = { it: VarType ->
-             operation(
-                 l(it) as Number,
-                 r(it) as Number
-             )
-        }
-        function
-    }
-
-    private val addOrSubExpr by leftAssociative(
-        mulOrDivExpr,
-        plusToken or minusToken
-    ) { l, op, r ->
-        val operation: (Number, Number) -> Number = if (op.token == plusToken) {
-            Number::plus
-        } else {
-            Number::minus
-        }
-        val function = { it: VarType ->
-            operation(
-                l(it) as Number,
-                r(it) as Number
-            )
-        }
-        function
-    }
-
-    private val arithmeticExpr by addOrSubExpr
-
-    private val term by stringParser or arithmeticExpr or trueParser or falseParser
+    private val arithmeticExpr = ArithmeticParser(varAccessParser).root
 
     private val arrayExpr by parser {
         val value = split(
@@ -158,32 +61,6 @@ class Interpreter : Grammar<BoolF>(
         ).toSet()
         value
     }.between(sqBrL, sqBrR)
-
-    private val inArrayBoolExpr by parser {
-        val leftResolver = term()
-        val isIn = inToken()
-        val right = arrayExpr()
-        val function = { it: VarType ->
-            val left = leftResolver(it)
-            (left in right) xor !isIn
-        }
-        function
-    }
-
-    private val compareBoolExpr: PF by parser {
-        val l = term()
-        val compare = (
-                greaterThanEquals or lessThanEquals or
-                        lessThan or greaterThan or areEqual or areNotEqual
-                )()
-        val r = term()
-        val function = { it: VarType ->
-            val lValue = l(it)
-            val rValue = r(it)
-            compare(lValue, rValue)
-        }
-        function
-    }
 
     private val sizeCallParser by functionCall(
         "size",
@@ -199,20 +76,20 @@ class Interpreter : Grammar<BoolF>(
         (args.first() as String).length
     }
 
-    private val boolExpr by compareBoolExpr or inArrayBoolExpr or varAccessParser
+    private val term by stringParser or arithmeticExpr or trueParser or falseParser
 
-    private val andChain by leftAssociative(boolExpr, andToken) { l, r ->
-        { it: VarType ->
-            (l(it) as Boolean) && (r(it) as Boolean)
+    private val inArrayBoolExpr by parser {
+        val leftResolver = term()
+        val isIn = inToken()
+        val right = arrayExpr()
+        val function = { it: VarType ->
+            val left = leftResolver(it)
+            (left in right) xor !isIn
         }
-    }
-    private val orChain by leftAssociative(andChain, orToken) { l, r ->
-        { it: VarType ->
-            (l(it) as Boolean) || (r(it) as Boolean)
-        }
+        function
     }
 
-    private val expr by orChain
+    private val expr by BooleanParser(term, listOf(inArrayBoolExpr, varAccessParser)).root
 
     override val root: Parser<BoolF> by parser {
         val result = expr()

@@ -1,0 +1,2 @@
+object['some'] * (10.0 + object["some2"]) <= 100 && object['someStr'] == "something"
+  || object['someStr2'] in ['something2','something3']
