@@ -42,8 +42,14 @@ class Interpreter : Grammar<BoolF>(
     private val lessThanEquals by literalToken("<=").map {
         { l: Any, r: Any -> (l as Int) <= (r as Int) }
     }
-    private val string by regexToken("\'[a-zA-Z0-9]+\'").map {
-        it.text.trim('\'')
+    private val quote by literalToken("'")
+    private val doubleQuote by literalToken("\"")
+    private val string by regexToken("[a-zA-Z0-9]+")
+    private val stringLiteral by (
+            (-quote and string and -quote)
+        or (-doubleQuote and string and -doubleQuote)
+    ).map {
+        it.text
     }
     private val digitsToken by regexToken("[0-9]+").map {
         it.text.toInt()
@@ -81,7 +87,7 @@ class Interpreter : Grammar<BoolF>(
     }
 
     private val varAccessParser: PF
-        by -varName and (-sqBrL and string and -sqBrR).map { field ->
+        by -varName and (-sqBrL and stringLiteral and -sqBrR).map { field ->
         val function = { it: VarType ->
             val value = it[field]!!.jsonPrimitive
             when {
@@ -94,7 +100,7 @@ class Interpreter : Grammar<BoolF>(
         function
     }
 
-    private val stringParser: PF by string.mapToF()
+    private val stringParser: PF by stringLiteral.mapToF()
 
     private val doubleParser by
         (digitsToken and dot and digitsToken).map {
@@ -145,7 +151,7 @@ class Interpreter : Grammar<BoolF>(
 
     private val arrayExpr by parser {
         val value = split(
-            string or numberParser,
+            stringLiteral or numberParser,
             comma,
             allowEmpty = true,
             trailingSeparator = true
