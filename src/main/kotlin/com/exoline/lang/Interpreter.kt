@@ -22,8 +22,8 @@ class Interpreter : Grammar<BoolF>(
     private val varName by literalToken("object")
     private val sqBrL by literalToken("[")
     private val sqBrR by literalToken("]")
-    private val braceL by literalToken("(")
-    private val braceR by literalToken(")")
+    private val parL by literalToken("(")
+    private val parR by literalToken(")")
     private val areEqual by literalToken("==").map {
         { l: Any, r: Any -> l == r }
     }
@@ -73,9 +73,9 @@ class Interpreter : Grammar<BoolF>(
         vararg argumentsParser: PF,
         body: (Arguments) -> Any
     ): PF = -literalToken(funcToken) and
-            (-braceL and
+            (-parL and
                     argumentsParser.toList().join(comma)
-                    and -braceR
+                    and -parR
                     ).map { argResolvers ->
         val function = { it: VarType ->
             val arguments = argResolvers.map { arg ->
