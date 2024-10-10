@@ -49,16 +49,10 @@ class Interpreter : AbstractGrammar<AppResult>(
         by -varName and (-sqBrL and stringLiteral and -sqBrR).map { field ->
             fields += field
             val function = { it: VarType ->
-                val value = it[field]!!.jsonPrimitive
-                when {
-                    value.intOrNull != null -> value.jsonPrimitive.int
-                    value.isString -> value.content
-                    value.booleanOrNull != null -> value.boolean
-                    else -> throw RuntimeException("Unknown type")
-                }
+                it.getRecursively(field)
             }
             function
-    }
+        }
 
     private val stringParser: PF by stringLiteral.mapToF()
 

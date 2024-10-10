@@ -1,5 +1,7 @@
 package com.exoline.lang
 
+import kotlinx.serialization.json.*
+
 infix fun Number.plus(other: Number): Number {
     return when(this) {
         is Int -> when (other) {
@@ -77,5 +79,16 @@ operator fun Number.compareTo(other: Number): Int {
             else -> TODO("Not implemented yet")
         }
         else -> TODO("Not implemented yet")
+    }
+}
+
+fun VarType.getRecursively(field: String): Any {
+    // TODO json pointer
+    val value = this[field]!!.jsonPrimitive
+    return when {
+        value.intOrNull != null -> value.jsonPrimitive.int
+        value.isString -> value.content
+        value.booleanOrNull != null -> value.boolean
+        else -> throw RuntimeException("Unknown type")
     }
 }
