@@ -2,5 +2,6 @@
   "map": {
     "some": 10
   },
+  "fields": ["some"],
   "expected": true
 }

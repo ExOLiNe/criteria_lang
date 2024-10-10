@@ -13,9 +13,20 @@ typealias BoolF = (VarType) -> Boolean
 typealias PF = Parser<F>
 typealias Arguments = List<Any>
 
-class Interpreter : AbstractGrammar<BoolF>(
+data class AppResult(
+    val fields: Set<String>,
+    val app: BoolF
+)
+
+class Interpreter : AbstractGrammar<AppResult>(
     debugMode = true
 ) {
+    private val fields = mutableSetOf<String>()
+
+    private fun resetState() {
+        fields.clear()
+    }
+
     private fun functionCall(
         funcToken: String,
         vararg argumentsParser: PF,
@@ -36,16 +47,17 @@ class Interpreter : AbstractGrammar<BoolF>(
 
     private val varAccessParser: PF
         by -varName and (-sqBrL and stringLiteral and -sqBrR).map { field ->
-        val function = { it: VarType ->
-            val value = it[field]!!.jsonPrimitive
-            when {
-                value.intOrNull != null -> value.jsonPrimitive.int
-                value.isString -> value.content
-                value.booleanOrNull != null -> value.boolean
-                else -> throw RuntimeException("Unknown type")
+            fields += field
+            val function = { it: VarType ->
+                val value = it[field]!!.jsonPrimitive
+                when {
+                    value.intOrNull != null -> value.jsonPrimitive.int
+                    value.isString -> value.content
+                    value.booleanOrNull != null -> value.boolean
+                    else -> throw RuntimeException("Unknown type")
+                }
             }
-        }
-        function
+            function
     }
 
     private val stringParser: PF by stringLiteral.mapToF()
@@ -91,7 +103,8 @@ class Interpreter : AbstractGrammar<BoolF>(
 
     val boolExpr by BooleanParser(term, listOf(inArrayBoolExpr, varAccessParser)).root
 
-    override val root: Parser<BoolF> by parser {
+    override val root: Parser<AppResult> by parser {
+        resetState()
         val result = boolExpr()
         val function: BoolF = { it ->
             val value = result(it)
@@ -100,6 +113,9 @@ class Interpreter : AbstractGrammar<BoolF>(
             }
             value
         }
-        function
+        AppResult(
+            fields = fields,
+            app = function
+        )
     }
 }

@@ -3,5 +3,6 @@
     "some": "hello",
     "some2": "hello"
   },
+  "fields": ["some", "some2"],
   "expected": true
 }

@@ -4,5 +4,6 @@
     "someNum": 10,
     "someNum2": 10
   },
+  "fields": ["some", "someNum", "someNum2"],
   "expected": true
 }

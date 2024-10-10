@@ -7,7 +7,7 @@ object['some'] in ['val1', 'val2', 'val3']
 ```
 
 ## TODO
-- collect object fields which used in a program
+- json pointers inside object['/some/some2']
 - functions support
 - `in range` operator for numbers
 - `contains` operator

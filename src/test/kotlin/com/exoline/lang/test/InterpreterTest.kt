@@ -17,11 +17,17 @@ class InterpreterTest {
             val ignore = test["ignore"]?.jsonPrimitive?.booleanOrNull
             if (ignore != true) {
                 val map = test["map"] as JsonObject
-                val expected = test["expected"]?.jsonPrimitive?.boolean!!
+                val expectedResult = test["expected"]?.jsonPrimitive?.boolean!!
                 try {
-                    val app = interpreter.parseOrThrow(appStr)
-                    val actual = app(map)
-                    Assertions.assertEquals(expected, actual, "Test#${it.name} failed. Actual: ${actual}. Expected: $expected")
+                    val (actualFields, app) = interpreter.parseOrThrow(appStr)
+                    val actualResult = app(map)
+                    val expectedFields = test["fields"]?.jsonArray?.map {
+                        it.jsonPrimitive.content
+                    }?.toSet()
+                    if (expectedFields != null) {
+                        Assertions.assertEquals(expectedFields, actualFields, "Test#${it.name}")
+                    }
+                    Assertions.assertEquals(expectedResult, actualResult, "Test#${it.name}")
                 } catch(ex: ParseException) {
                     throw Exception("Test#${it.name} failed with parse exception", ex)
                 } catch(ex: Exception) {

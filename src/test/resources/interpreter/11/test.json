@@ -5,5 +5,6 @@
     "someStr": "something",
     "someStr2": "something3"
   },
+  "fields": ["some", "some2", "someStr", "someStr2"],
   "expected": true
 }
