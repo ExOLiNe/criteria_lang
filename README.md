@@ -7,14 +7,14 @@ object['some'] in ['val1', 'val2', 'val3']
 ```
 
 ## TODO
-- json pointers inside object['/some/some2']
+- null support for var access and `NULL` token (separate `None` and real `null` ???)
 - functions support
 - `in range` operator for numbers
 - `contains` operator
 - `like`/`startsWith` operator for strings
 - `size` function for arrays
-- custom identifiers
-  - `include` statement (for loading of own identifiers)
-- null support for var access and `NULL` token (separate `None` and real `null` ???)
 - dates support
   - `olderThan`, `newerThan` operators
+- variables support and var debug
+- custom identifiers
+  - `include` statement (for loading of own identifiers)

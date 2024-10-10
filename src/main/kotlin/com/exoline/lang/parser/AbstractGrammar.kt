@@ -11,6 +11,13 @@ abstract class AbstractGrammar<T>(
 ) : Grammar<T>(debugMode = debugMode) {
     init { regexToken("\\s+", ignored = true) }
 
+    protected fun Parser<String>.quotedParser(): Parser<String> {
+        return ((-quote and this and -quote)
+        or (-doubleQuote and this and -doubleQuote)).map {
+            it
+        }
+    }
+
     protected val varName by literalToken("object")
     protected val sqBrL by literalToken("[")
     protected val sqBrR by literalToken("]")
@@ -36,13 +43,8 @@ abstract class AbstractGrammar<T>(
     }
     protected val quote by literalToken("'")
     protected val doubleQuote by literalToken("\"")
-    protected val string by regexToken("[a-zA-Z0-9]+")
-    protected val stringLiteral by (
-            (-quote and string and -quote)
-                    or (-doubleQuote and string and -doubleQuote)
-            ).map {
-            it.text
-        }
+    protected val string by regexToken("[a-zA-Z0-9]+").map { it.text }
+    protected val stringLiteral: Parser<String> by string.quotedParser()
     protected val digitsToken by regexToken("[0-9]+").map {
         it.text.toInt()
     }

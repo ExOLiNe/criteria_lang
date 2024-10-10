@@ -83,10 +83,13 @@ operator fun Number.compareTo(other: Number): Int {
 }
 
 fun VarType.getRecursively(field: String): Any {
-    // TODO json pointer
-    val value = this[field]!!.jsonPrimitive
+    val fieldTrimmed = field.trim('/')
+    val segments = fieldTrimmed.split("/")
+    val value = segments.fold<String, JsonElement>(this) { acc, segment ->
+        (acc as JsonObject)[segment]!!
+    }.jsonPrimitive
     return when {
-        value.intOrNull != null -> value.jsonPrimitive.int
+        value.intOrNull != null -> value.int
         value.isString -> value.content
         value.booleanOrNull != null -> value.boolean
         else -> throw RuntimeException("Unknown type")

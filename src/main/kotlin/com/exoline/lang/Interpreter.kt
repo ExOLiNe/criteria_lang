@@ -3,7 +3,7 @@ package com.exoline.lang
 import com.exoline.lang.parser.AbstractGrammar
 import com.exoline.lang.parser.ArithmeticParser
 import com.exoline.lang.parser.BooleanParser
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.JsonObject
 import me.alllex.parsus.parser.*
 import me.alllex.parsus.token.literalToken
 
@@ -45,8 +45,12 @@ class Interpreter : AbstractGrammar<AppResult>(
         function
     }
 
+    private val fieldParser: Parser<String> by separated(string, divToken).map {
+        it.joinToString(divToken.string)
+    }.quotedParser()
+
     private val varAccessParser: PF
-        by -varName and (-sqBrL and stringLiteral and -sqBrR).map { field ->
+        by -varName and (-sqBrL and fieldParser and -sqBrR).map { field ->
             fields += field
             val function = { it: VarType ->
                 it.getRecursively(field)

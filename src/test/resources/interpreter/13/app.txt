@@ -1,1 +1,1 @@
-object['some']
+object['some/some2']
