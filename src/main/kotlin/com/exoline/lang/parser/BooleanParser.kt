@@ -3,10 +3,7 @@ package com.exoline.lang.parser
 import com.exoline.lang.F
 import com.exoline.lang.PF
 import com.exoline.lang.VarType
-import me.alllex.parsus.parser.Parser
-import me.alllex.parsus.parser.leftAssociative
-import me.alllex.parsus.parser.or
-import me.alllex.parsus.parser.parser
+import me.alllex.parsus.parser.*
 
 class BooleanParser(
     term: Parser<F>,
@@ -26,16 +23,18 @@ class BooleanParser(
         }
         function
     }
-    private val boolExpr by additionalParsers.fold(compareBoolExpr) { acc, parser ->
-        acc or parser
-    }
+    private val boolExpr by listOf((-parL and ref(::orChain) and -parR), trueParser, falseParser)
+        .plus(additionalParsers)
+        .fold(compareBoolExpr) { acc, parser ->
+            acc or parser
+        }
 
-    private val andChain by leftAssociative(boolExpr, andToken) { l, r ->
+    private val andChain: Parser<(VarType) -> Any> by leftAssociative(boolExpr, andToken) { l, r ->
         { it: VarType ->
             (l(it) as Boolean) && (r(it) as Boolean)
         }
     }
-    private val orChain by leftAssociative(andChain, orToken) { l, r ->
+    private val orChain: Parser<(VarType) -> Any> by leftAssociative(andChain, orToken) { l, r ->
         { it: VarType ->
             (l(it) as Boolean) || (r(it) as Boolean)
         }

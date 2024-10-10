@@ -8,7 +8,6 @@ object['some'] in ['val1', 'val2', 'val3']
 
 ## TODO
 - collect object fields which used in a program
-- braces support for boolean expressions
 - functions support
 - `in range` operator for numbers
 - `contains` operator

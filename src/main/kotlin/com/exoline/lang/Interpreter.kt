@@ -50,7 +50,7 @@ class Interpreter : AbstractGrammar<BoolF>(
 
     private val stringParser: PF by stringLiteral.mapToF()
 
-    private val arithmeticExpr = ArithmeticParser(varAccessParser).root
+    val arithmeticExpr = ArithmeticParser(varAccessParser).root
 
     private val arrayExpr by parser {
         val value = split(
@@ -76,7 +76,7 @@ class Interpreter : AbstractGrammar<BoolF>(
         (args.first() as String).length
     }
 
-    private val term by stringParser or arithmeticExpr or trueParser or falseParser
+    private val term by stringParser or arithmeticExpr
 
     private val inArrayBoolExpr by parser {
         val leftResolver = term()
@@ -89,10 +89,10 @@ class Interpreter : AbstractGrammar<BoolF>(
         function
     }
 
-    private val expr by BooleanParser(term, listOf(inArrayBoolExpr, varAccessParser)).root
+    val boolExpr by BooleanParser(term, listOf(inArrayBoolExpr, varAccessParser)).root
 
     override val root: Parser<BoolF> by parser {
-        val result = expr()
+        val result = boolExpr()
         val function: BoolF = { it ->
             val value = result(it)
             if (value !is Boolean) {
