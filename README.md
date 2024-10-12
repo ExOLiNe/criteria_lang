@@ -8,7 +8,6 @@ object['some'] in ['val1', 'val2', 'val3']
 
 ## TODO
 - null support for var access and `NULL` token (separate `None` and real `null` ???)
-- functions support
 - `in range` operator for numbers
 - `contains` operator
 - `like`/`startsWith` operator for strings

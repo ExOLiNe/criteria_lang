@@ -3,9 +3,9 @@ package com.exoline.lang
 import com.exoline.lang.parser.AbstractGrammar
 import com.exoline.lang.parser.ArithmeticParser
 import com.exoline.lang.parser.BooleanParser
+import com.exoline.lang.parser.FunctionParser
 import kotlinx.serialization.json.JsonObject
 import me.alllex.parsus.parser.*
-import me.alllex.parsus.token.literalToken
 
 typealias VarType = JsonObject
 typealias F = (VarType) -> Any
@@ -27,24 +27,6 @@ class Interpreter : AbstractGrammar<AppResult>(
         fields.clear()
     }
 
-    private fun functionCall(
-        funcToken: String,
-        vararg argumentsParser: PF,
-        body: (Arguments) -> Any
-    ): PF = -literalToken(funcToken) and
-            (-parL and
-                    argumentsParser.toList().join(comma)
-                    and -parR
-                    ).map { argResolvers ->
-        val function = { it: VarType ->
-            val arguments = argResolvers.map { arg ->
-                arg(it)
-            }
-            body(arguments)
-        }
-        function
-    }
-
     private val fieldParser: Parser<String> by separated(string, divToken).map {
         it.joinToString(divToken.string)
     }.quotedParser()
@@ -60,33 +42,15 @@ class Interpreter : AbstractGrammar<AppResult>(
 
     private val stringParser: PF by stringLiteral.mapToF()
 
-    val arithmeticExpr = ArithmeticParser(varAccessParser).root
+    val functionParser = FunctionParser(ref(::term))
 
-    private val arrayExpr by parser {
-        val value = split(
-            stringLiteral or numberParser,
-            comma,
-            allowEmpty = true,
-            trailingSeparator = true
-        ).toSet()
-        value
-    }.between(sqBrL, sqBrR)
+    val arithmeticExpr: Parser<(VarType) -> Any> = ArithmeticParser(listOf(
+        varAccessParser,
+        functionParser.root
+    )).root
 
-    private val sizeCallParser by functionCall(
-        "size",
-        arrayExpr.mapToF()
-    ) { args ->
-        (args.first() as Set<*>).size
-    }
-
-    private val strLengthCallParser by functionCall(
-        "size",
-        stringParser
-    ) { args ->
-        (args.first() as String).length
-    }
-
-    private val term by stringParser or arithmeticExpr
+    val term: Parser<(VarType) -> Any> by
+        stringParser or arithmeticExpr
 
     private val inArrayBoolExpr by parser {
         val leftResolver = term()

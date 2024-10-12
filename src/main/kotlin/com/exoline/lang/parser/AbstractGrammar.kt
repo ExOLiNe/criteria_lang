@@ -67,4 +67,14 @@ abstract class AbstractGrammar<T>(
     }
 
     protected val numberParser: Parser<Number> by doubleParser or digitsToken
+
+    protected val arrayExpr by parser {
+        val value = split(
+            stringLiteral or numberParser,
+            comma,
+            allowEmpty = true,
+            trailingSeparator = true
+        ).toSet()
+        value
+    }.between(sqBrL, sqBrR)
 }

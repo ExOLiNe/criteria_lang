@@ -4,9 +4,13 @@ import com.exoline.lang.*
 import me.alllex.parsus.parser.*
 
 class ArithmeticParser(
-    varAccessParser: Parser<F>
+    additionalParsers: List<Parser<F>>
 ) : AbstractGrammar<F>() {
-    private val term by varAccessParser or numberParser.mapToF() or (-parL and ref(::addOrSubExpr) and -parR)
+    private val term by additionalParsers
+        .plus(-parL and ref(::addOrSubExpr) and -parR)
+        .fold(numberParser.mapToF() as Parser<F>) { acc, parser ->
+            acc or parser
+        }
 
     private val mulOrDivExpr: PF by leftAssociative(
         term,

@@ -1,6 +1,8 @@
 package com.exoline.lang
 
 import kotlinx.serialization.json.*
+import me.alllex.parsus.parser.Parser
+import me.alllex.parsus.parser.or
 
 infix fun Number.plus(other: Number): Number {
     return when(this) {
