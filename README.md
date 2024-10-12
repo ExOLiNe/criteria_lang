@@ -7,7 +7,7 @@ object['some'] in ['val1', 'val2', 'val3']
 ```
 
 ```
-me = object['field'] + object['field2'];
+$some = object['field'] + object['field2'];
 $some == 20
 ```
 
