@@ -19,5 +19,4 @@ $some == 20
 - `size` function for arrays
 - dates support
   - `olderThan`, `newerThan` operators
-- custom identifiers
-  - `include` statement (for loading of own identifiers)
+- `include` statement (for loading of own identifiers)
