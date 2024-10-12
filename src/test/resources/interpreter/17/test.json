@@ -1,0 +1,11 @@
+{
+  "map": {
+    "field": 5,
+    "field2": 15
+  },
+  "fields": ["field", "field2"],
+  "identifiersValues": {
+    "some": 20
+  },
+  "expected": true
+}

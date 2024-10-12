@@ -1,0 +1,2 @@
+$some = object['field'] + object['field2'];
+$some == 20

@@ -23,6 +23,9 @@ abstract class AbstractGrammar<T>(
     protected val sqBrR by literalToken("]")
     protected val parL by literalToken("(")
     protected val parR by literalToken(")")
+    protected val assign by literalToken("=")
+    protected val semicolon by literalToken(";")
+    protected val buck by literalToken("$")
     protected val areEqual by literalToken("==").map {
         { l: Any, r: Any -> l == r }
     }

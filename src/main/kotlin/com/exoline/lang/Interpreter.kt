@@ -13,25 +13,34 @@ typealias BoolF = (VarType) -> Boolean
 typealias PF = Parser<F>
 typealias Arguments = List<Any>
 
-data class AppResult(
+data class ParseResult(
     val fields: Set<String>,
-    val app: BoolF
-)
+    val app: AppResult
+) {
+    data class AppResult(
+        val function: BoolF,
+        val identifiersValues: Map<String, Any>
+    )
+}
 
-class Interpreter : AbstractGrammar<AppResult>(
+class Interpreter : AbstractGrammar<ParseResult>(
     debugMode = true
 ) {
     private val fields = mutableSetOf<String>()
+    private val identifiers = mutableMapOf<String, F>()
+    private val identifiersValues = mutableMapOf<String, Any>()
 
     private fun resetState() {
         fields.clear()
+        identifiers.clear()
+        identifiersValues.clear()
     }
 
     private val fieldParser: Parser<String> by separated(string, divToken).map {
         it.joinToString(divToken.string)
     }.quotedParser()
 
-    private val varAccessParser: PF
+    private val objectAccessParser: PF
         by -varName and (-sqBrL and fieldParser and -sqBrR).map { field ->
             fields += field
             val function = { it: VarType ->
@@ -40,12 +49,33 @@ class Interpreter : AbstractGrammar<AppResult>(
             function
         }
 
+    private val identifierDefinition
+        by (-buck and string and -assign and ref(::term)).map { (identifier, value) ->
+            if (identifiers.contains(identifier)) {
+                throw Exception("Redefinition of $identifier")
+            }
+            identifiers[identifier] = value
+    }
+
+    private val identifierAccess: Parser<(VarType) -> Any> by -buck and string.map { identifier ->
+        (identifiers[identifier])?.let { identifierExpression ->
+            // modified lambda(to save value of identifier's underlying expression
+            val function: F = { it: VarType ->
+                identifierExpression(it).apply {
+                    identifiersValues[identifier] = this
+                }
+            }
+            function
+        } ?: throw Exception("Unknown identifier $identifier")
+    }
+
     private val stringParser: PF by stringLiteral.mapToF()
 
     val functionParser = FunctionParser(ref(::term))
 
     val arithmeticExpr: Parser<(VarType) -> Any> = ArithmeticParser(listOf(
-        varAccessParser,
+        objectAccessParser,
+        identifierAccess,
         functionParser.root
     )).root
 
@@ -63,10 +93,15 @@ class Interpreter : AbstractGrammar<AppResult>(
         function
     }
 
-    val boolExpr by BooleanParser(term, listOf(inArrayBoolExpr, varAccessParser)).root
+    private val statement by zeroOrMore(identifierDefinition and -semicolon)
 
-    override val root: Parser<AppResult> by parser {
+    val boolExpr by BooleanParser(
+        term,
+        listOf(inArrayBoolExpr, objectAccessParser, identifierAccess)).root
+
+    override val root: Parser<ParseResult> by parser {
         resetState()
+        statement()
         val result = boolExpr()
         val function: BoolF = { it ->
             val value = result(it)
@@ -75,9 +110,9 @@ class Interpreter : AbstractGrammar<AppResult>(
             }
             value
         }
-        AppResult(
+        ParseResult(
             fields = fields,
-            app = function
+            app = ParseResult.AppResult(function, identifiersValues)
         )
     }
 }

@@ -90,10 +90,12 @@ fun VarType.getRecursively(field: String): Any {
     val value = segments.fold<String, JsonElement>(this) { acc, segment ->
         (acc as JsonObject)[segment]!!
     }.jsonPrimitive
-    return when {
-        value.intOrNull != null -> value.int
-        value.isString -> value.content
-        value.booleanOrNull != null -> value.boolean
-        else -> throw RuntimeException("Unknown type")
-    }
+    return value.toAny()
+}
+
+fun JsonPrimitive.toAny(): Any =when {
+    intOrNull != null -> int
+    isString -> content
+    booleanOrNull != null -> boolean
+    else -> throw RuntimeException("Unknown type")
 }

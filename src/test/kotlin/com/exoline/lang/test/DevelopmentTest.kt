@@ -27,7 +27,7 @@ class DevelopmentTest {
         val interpreter = Interpreter()
         val app = interpreter.parseOrThrow(
             getFile("development/code.txt").readText()
-        ).app
+        ).app.function
         val map = JsonObject(
             mapOf("some" to JsonPrimitive(10))
         )
