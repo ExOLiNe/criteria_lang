@@ -4,16 +4,7 @@ import com.exoline.lang.parser.AbstractGrammar
 import com.exoline.lang.parser.ArithmeticParser
 import com.exoline.lang.parser.BooleanParser
 import com.exoline.lang.parser.FunctionParser
-import kotlinx.serialization.json.JsonObject
 import me.alllex.parsus.parser.*
-
-typealias VarType = JsonObject
-typealias F = (VarType) -> Any
-typealias BoolF = (VarType) -> Boolean
-typealias PF = Parser<F>
-typealias Arguments = List<Any>
-typealias ImportReference = String
-typealias ImportCode = String
 
 data class ParseResult(
     val fields: Set<String>,
@@ -21,7 +12,7 @@ data class ParseResult(
 ) {
     data class AppResult(
         val function: BoolF,
-        val identifiersValues: Map<String, Any>
+        val identifiersValues: Map<String, Any?>
     )
 }
 
@@ -32,7 +23,7 @@ class Interpreter(
 ) {
     private val fields = mutableSetOf<String>()
     private val identifiers = mutableMapOf<String, F>()
-    private val identifiersValues = mutableMapOf<String, Any>()
+    private val identifiersValues = mutableMapOf<String, Any?>()
 
     private fun resetState() {
         fields.clear()
@@ -61,7 +52,7 @@ class Interpreter(
             identifiers[identifier] = value
     }
 
-    private val identifierAccess: Parser<(VarType) -> Any> by -buck and string.map { identifier ->
+    private val identifierAccess: Parser<F> by -buck and string.map { identifier ->
         (identifiers[identifier])?.let { identifierExpression ->
             // modified lambda(to save value of identifier's underlying expression
             val function: F = { it: VarType ->
@@ -77,14 +68,14 @@ class Interpreter(
 
     val functionParser = FunctionParser(ref(::term))
 
-    val arithmeticExpr: Parser<(VarType) -> Any> = ArithmeticParser(listOf(
+    val arithmeticExpr: Parser<F> = ArithmeticParser(listOf(
         objectAccessParser,
         identifierAccess,
         functionParser.root
     )).root
 
-    val term: Parser<(VarType) -> Any> by
-        stringParser or arithmeticExpr
+    val term: Parser<F> by
+        stringParser or arithmeticExpr or nullToken.mapToF(null as Any?)
 
     private val inArrayBoolExpr by parser {
         val leftResolver = term()

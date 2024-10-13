@@ -29,12 +29,12 @@ class BooleanParser(
             acc or parser
         }
 
-    private val andChain: Parser<(VarType) -> Any> by leftAssociative(boolExpr, andToken) { l, r ->
+    private val andChain: Parser<F> by leftAssociative(boolExpr, andToken) { l, r ->
         { it: VarType ->
             (l(it) as Boolean) && (r(it) as Boolean)
         }
     }
-    private val orChain: Parser<(VarType) -> Any> by leftAssociative(andChain, orToken) { l, r ->
+    private val orChain: Parser<F> by leftAssociative(andChain, orToken) { l, r ->
         { it: VarType ->
             (l(it) as Boolean) || (r(it) as Boolean)
         }

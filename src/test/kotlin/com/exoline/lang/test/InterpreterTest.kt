@@ -1,8 +1,12 @@
 package com.exoline.lang.test
 
 import com.exoline.lang.Interpreter
+import com.exoline.lang.JObject
 import com.exoline.lang.toAny
-import kotlinx.serialization.json.*
+import com.exoline.lang.toJObject
+import com.fasterxml.jackson.databind.node.ArrayNode
+import com.fasterxml.jackson.databind.node.BooleanNode
+import com.fasterxml.jackson.databind.node.TextNode
 import me.alllex.parsus.parser.ParseException
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -19,22 +23,22 @@ class InterpreterTest {
             if (it.isDirectory) {
                 if (only == -1 || it.name == only.toString()) {
                     val appStr = it.resolve("app.txt").readText()
-                    val test = Json.decodeFromString<JsonObject>(it.resolve("test.json").readText())
-                    val ignore = test["ignore"]?.jsonPrimitive?.booleanOrNull
+                    val test = it.resolve("test.json").readText().toJObject()
+                    val ignore = (test["ignore"] as? BooleanNode)?.booleanValue()
                     if (ignore != true) {
-                        val map = test["map"] as JsonObject
-                        val expectedResult = test["expected"]?.jsonPrimitive?.boolean!!
+                        val map = test["map"] as JObject
+                        val expectedResult = (test["expected"] as? BooleanNode)?.booleanValue()!!
                         try {
                             val (actualFields, appResult) = interpreter.parseOrThrow(appStr)
                             val actualResult = appResult.function(map)
-                            val expectedFields = test["fields"]?.jsonArray?.map {
-                                it.jsonPrimitive.content
+                            val expectedFields = (test["fields"] as? ArrayNode)?.map {
+                                (it as TextNode).textValue()
                             }?.toSet()
                             if (expectedFields != null) {
                                 Assertions.assertEquals(expectedFields, actualFields, "Test#${it.name}")
                             }
-                            val expectedIdentifiersValues = test["identifiersValues"]?.jsonObject?.map { (identifier, value) ->
-                                identifier to value.jsonPrimitive.toAny()
+                            val expectedIdentifiersValues = (test["identifiersValues"] as? JObject)?.fields()?.asSequence()?.map { (identifier, value) ->
+                                identifier to value.toAny()
                             }?.toMap()
                             if (expectedIdentifiersValues != null) {
                                 Assertions.assertEquals(expectedIdentifiersValues, appResult.identifiersValues, "Test#${it.name}")

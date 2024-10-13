@@ -1,0 +1,16 @@
+package com.exoline.lang
+
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.ObjectNode
+import me.alllex.parsus.parser.Parser
+
+typealias JObject = ObjectNode
+typealias JElement = JsonNode
+
+typealias VarType = JObject
+typealias F = (VarType) -> Any?
+typealias BoolF = (VarType) -> Boolean
+typealias PF = Parser<F>
+typealias Arguments = List<Any?>
+typealias ImportReference = String
+typealias ImportCode = String

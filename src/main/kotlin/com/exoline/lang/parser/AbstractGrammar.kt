@@ -27,22 +27,22 @@ abstract class AbstractGrammar<T>(
     protected val semicolon by literalToken(";")
     protected val buck by literalToken("$")
     protected val areEqual by literalToken("==").map {
-        { l: Any, r: Any -> l == r }
+        { l: Any?, r: Any? -> l == r }
     }
     protected val areNotEqual by literalToken("!=").map {
-        { l: Any, r: Any -> l != r }
+        { l: Any?, r: Any? -> l != r }
     }
     protected val greaterThan by literalToken(">").map {
-        { l: Any, r: Any -> (l as Number) > (r as Number) }
+        { l: Any?, r: Any? -> (l as Number) > (r as Number) }
     }
     protected val greaterThanEquals by literalToken(">=").map {
-        { l: Any, r: Any -> (l as Number) >= (r as Number) }
+        { l: Any?, r: Any? -> (l as Number) >= (r as Number) }
     }
     protected val lessThan by literalToken("<").map {
-        { l: Any, r: Any -> (l as Number) < (r as Number) }
+        { l: Any?, r: Any? -> (l as Number) < (r as Number) }
     }
     protected val lessThanEquals by literalToken("<=").map {
-        { l: Any, r: Any -> (l as Number) <= (r as Number) }
+        { l: Any?, r: Any? -> (l as Number) <= (r as Number) }
     }
     protected val quote by literalToken("'")
     protected val doubleQuote by literalToken("\"")
@@ -65,6 +65,10 @@ abstract class AbstractGrammar<T>(
     protected val trueParser by literalToken("true") mapToF(true)
     protected val falseParser by literalToken("false") mapToF(false)
 
+    protected val importToken by literalToken("import")
+
+    protected val nullToken by  literalToken("null")
+
     protected val doubleParser by (digitsToken and dot and digitsToken).map {
         "${it.t1}.${it.t3}".toDouble()
     }
@@ -80,6 +84,4 @@ abstract class AbstractGrammar<T>(
         ).toSet()
         value
     }.between(sqBrL, sqBrR)
-
-    protected val importToken by literalToken("import")
 }

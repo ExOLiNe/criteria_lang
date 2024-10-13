@@ -1,8 +1,12 @@
 package com.exoline.lang
 
-import kotlinx.serialization.json.*
-import me.alllex.parsus.parser.Parser
-import me.alllex.parsus.parser.or
+import com.fasterxml.jackson.databind.node.BooleanNode
+import com.fasterxml.jackson.databind.node.DoubleNode
+import com.fasterxml.jackson.databind.node.IntNode
+import com.fasterxml.jackson.databind.node.NullNode
+import com.fasterxml.jackson.databind.node.TextNode
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 
 infix fun Number.plus(other: Number): Number {
     return when(this) {
@@ -84,18 +88,25 @@ operator fun Number.compareTo(other: Number): Int {
     }
 }
 
-fun VarType.getRecursively(field: String): Any {
+fun VarType.getRecursively(field: String): Any? {
     val fieldTrimmed = field.trim('/')
     val segments = fieldTrimmed.split("/")
-    val value = segments.fold<String, JsonElement>(this) { acc, segment ->
-        (acc as JsonObject)[segment]!!
-    }.jsonPrimitive
+    val value = segments.fold<String, JElement?>(this) { acc, segment ->
+        acc?.get(segment)
+    }
     return value.toAny()
 }
 
-fun JsonPrimitive.toAny(): Any =when {
-    intOrNull != null -> int
-    isString -> content
-    booleanOrNull != null -> boolean
+fun JElement?.toAny(): Any? = when (this) {
+    is IntNode -> intValue()
+    is DoubleNode -> doubleValue()
+    is TextNode -> textValue()
+    is BooleanNode -> booleanValue()
+    is NullNode, null -> null
     else -> throw RuntimeException("Unknown type")
+}
+
+fun String.toJObject(): JObject {
+    val mapper = jacksonObjectMapper()
+    return mapper.readValue(this)
 }

@@ -12,7 +12,9 @@ inline infix fun <reified T, reified P> Parser<T>.mapToF(value: P): Parser<(VarT
 inline fun <reified T> Parser<T>.mapToF(): Parser<(VarType) -> T> = map {
     it.toLambda()
 }
-inline fun <reified T>T.toLambda(): (VarType) -> T = { _: VarType -> this }
+inline fun <reified T>T.toLambda(): (VarType) -> T = { _: VarType ->
+    this
+}
 
 fun <T>List<Parser<T>>.join(
     separator: Token

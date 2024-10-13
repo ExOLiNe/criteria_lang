@@ -10,7 +10,7 @@ class FunctionParser(
     private fun functionCall(
         funcToken: String,
         vararg argumentsParser: PF,
-        body: (Arguments) -> Any
+        body: (Arguments) -> Any?
     ): PF = -literalToken(funcToken) and
             (-parL and argumentsParser.toList().join(comma) and -parR).map { argResolvers ->
                     val function = { it: VarType ->

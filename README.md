@@ -12,7 +12,6 @@ $some == 20
 ```
 
 ## TODO
-- null support for var access and `NULL` token (separate `None` and real `null` ???)
 - `in range` operator for numbers
 - `contains` operator
 - `like`/`startsWith` operator for strings
