@@ -19,4 +19,4 @@ $some == 20
 - `size` function for arrays
 - dates support
   - `olderThan`, `newerThan` operators
-- `include` statement (for loading of own identifiers)
+- detect import statement recursion

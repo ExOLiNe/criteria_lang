@@ -1,0 +1,12 @@
+{
+  "map": {
+    "field": 5,
+    "field2": 15
+  },
+  "identifiersValues": {
+    "some": "hello",
+    "some2": 10,
+    "anothersome": "anotherhello"
+  },
+  "expected": true
+}

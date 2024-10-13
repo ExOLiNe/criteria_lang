@@ -80,4 +80,6 @@ abstract class AbstractGrammar<T>(
         ).toSet()
         value
     }.between(sqBrL, sqBrR)
+
+    protected val importToken by literalToken("import")
 }

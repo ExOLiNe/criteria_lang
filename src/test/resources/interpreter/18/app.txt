@@ -1,0 +1,2 @@
+import header18;
+$some == 'hello' && $some2 == 10 && $anothersome == 'anotherhello'

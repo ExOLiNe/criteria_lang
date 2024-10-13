@@ -1,0 +1,3 @@
+import anotherheader18;
+$some = 'hello';
+$some2 = 10;

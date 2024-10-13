@@ -12,6 +12,8 @@ typealias F = (VarType) -> Any
 typealias BoolF = (VarType) -> Boolean
 typealias PF = Parser<F>
 typealias Arguments = List<Any>
+typealias ImportReference = String
+typealias ImportCode = String
 
 data class ParseResult(
     val fields: Set<String>,
@@ -23,8 +25,10 @@ data class ParseResult(
     )
 }
 
-class Interpreter : AbstractGrammar<ParseResult>(
-    debugMode = true
+class Interpreter(
+    private val importResolver: ((ImportReference) -> ImportCode?)? = null
+) : AbstractGrammar<ParseResult>(
+    debugMode = true,
 ) {
     private val fields = mutableSetOf<String>()
     private val identifiers = mutableMapOf<String, F>()
@@ -93,7 +97,16 @@ class Interpreter : AbstractGrammar<ParseResult>(
         function
     }
 
-    private val statement by zeroOrMore(identifierDefinition and -semicolon)
+    private val importStatement: Parser<String> by -importToken and string.map {
+        importResolver?.invoke(it)?.let { codeText ->
+            parseOrThrow(statement, codeText)
+            it
+        } ?: throw Exception("Import $it can't be resolved")
+    }
+
+    private val statement by
+        zeroOrMore(ref(::importStatement) and -semicolon) and
+        zeroOrMore(identifierDefinition and -semicolon)
 
     val boolExpr by BooleanParser(
         term,
