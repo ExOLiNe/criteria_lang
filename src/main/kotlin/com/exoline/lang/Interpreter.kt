@@ -77,15 +77,20 @@ class Interpreter(
     val term: Parser<F> by
         stringParser or arithmeticExpr or nullToken.mapToF(null as Any?)
 
-    private val inArrayBoolExpr by parser {
-        val leftResolver = term()
-        val isIn = inToken()
-        val right = arrayExpr()
-        val function = { it: VarType ->
-            val left = leftResolver(it)
-            (left in right) xor !isIn
-        }
-        function
+    private val inArrayBoolExpr by functionParser.infixFunctionCall("in", term, arrayExpr.mapToF()) { l, r ->
+        l in (r as Set<Any>)
+    } or functionParser.infixFunctionCall("!in", term, arrayExpr.mapToF()) { l, r ->
+        l !in (r as Set<Any>)
+    }
+
+    private val likeExpr by functionParser.infixFunctionCall("like", term, startsWithLiteral.mapToF()) { l, r ->
+        (l as? String?)?.startsWith(r as String) ?: false
+    } or functionParser.infixFunctionCall("!like", term, startsWithLiteral.mapToF()) { l, r ->
+        ((l as? String?)?.startsWith(r as String) ?: false).not()
+    } or functionParser.infixFunctionCall("like", term, endsWithLiteral.mapToF()) { l, r ->
+        (l as? String?)?.endsWith(r as String) ?: false
+    } or functionParser.infixFunctionCall("!like", term, endsWithLiteral.mapToF()) { l, r ->
+        ((l as? String?)?.endsWith(r as String) ?: false).not()
     }
 
     private val importStatement: Parser<String> by -importToken and string.map {
@@ -101,7 +106,7 @@ class Interpreter(
 
     val boolExpr by BooleanParser(
         term,
-        listOf(inArrayBoolExpr, objectAccessParser, identifierAccess)).root
+        listOf(likeExpr, inArrayBoolExpr, objectAccessParser, identifierAccess)).root
 
     override val root: Parser<ParseResult> by parser {
         resetState()

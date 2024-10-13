@@ -1,5 +1,6 @@
 package com.exoline.lang
 
+import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.BooleanNode
 import com.fasterxml.jackson.databind.node.DoubleNode
 import com.fasterxml.jackson.databind.node.IntNode
@@ -102,6 +103,11 @@ fun JElement?.toAny(): Any? = when (this) {
     is DoubleNode -> doubleValue()
     is TextNode -> textValue()
     is BooleanNode -> booleanValue()
+    is ArrayNode -> {
+        map {
+            it.toAny()
+        }
+    }
     is NullNode, null -> null
     else -> throw RuntimeException("Unknown type")
 }

@@ -1,0 +1,2 @@
+object['some'] like "prefix%" && object['some'] like "%suffix"
+    && object['some'] !like "blabla%" && object['some'] !like "%gfdsgfdg"

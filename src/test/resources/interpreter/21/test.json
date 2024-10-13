@@ -1,0 +1,6 @@
+{
+  "map": {
+    "someArr": [10, 20]
+  },
+  "expected": true
+}

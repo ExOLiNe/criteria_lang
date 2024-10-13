@@ -1,0 +1,6 @@
+{
+  "map": {
+    "some": "prefixsomethingsuffix"
+  },
+  "expected": true
+}

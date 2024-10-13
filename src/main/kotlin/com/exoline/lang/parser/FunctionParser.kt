@@ -7,7 +7,7 @@ import me.alllex.parsus.token.literalToken
 class FunctionParser(
     term: PF
 ) : AbstractGrammar<F>() {
-    private fun functionCall(
+    fun functionCall(
         funcToken: String,
         vararg argumentsParser: PF,
         body: (Arguments) -> Any?
@@ -22,11 +22,30 @@ class FunctionParser(
                     function
                 }
 
-    val strLengthCallParser by functionCall(
+    fun infixFunctionCall(
+        funcToken: String,
+        argumentL: PF,
+        argumentR: PF,
+        body: (Any?, Any?) -> Any?
+    ): PF = (argumentL and -literalToken(funcToken) and argumentR).map { (argLResolver, argRResolver) ->
+        val function = { it: VarType ->
+            val argL = argLResolver(it)
+            val argR = argRResolver(it)
+            body(argL, argR)
+        }
+        function
+    }
+
+    val sizeCallParser by functionCall(
         "size",
         term
     ) { args ->
-        (args.first() as String).length
+        val arg = args.first()
+        when (arg) {
+            is Collection<*> -> arg.size
+            is String -> arg.length
+            else -> throw Exception("Unknown type")
+        }
     }
 
     val dummy by functionCall(
@@ -36,5 +55,5 @@ class FunctionParser(
         args.first()
     }
 
-    override val root: Parser<F> by strLengthCallParser or dummy
+    override val root: Parser<F> by sizeCallParser or dummy
 }

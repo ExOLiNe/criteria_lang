@@ -14,8 +14,6 @@ $some == 20
 ## TODO
 - `in range` operator for numbers
 - `contains` operator
-- `like`/`startsWith` operator for strings
-- `size` function for arrays
 - dates support
   - `olderThan`, `newerThan` operators
 - detect import statement recursion

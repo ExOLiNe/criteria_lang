@@ -55,8 +55,6 @@ abstract class AbstractGrammar<T>(
     protected val orToken by literalToken("||")
     protected val comma by literalToken(",")
     protected val dot by literalToken(".").map { it.text }
-    protected val inToken by (literalToken("in") or literalToken("!in"))
-        .map { it.text == "in" }
     protected val plusToken by literalToken("+")
     protected val minusToken by literalToken("-")
     protected val mulToken by literalToken("*")
@@ -68,6 +66,11 @@ abstract class AbstractGrammar<T>(
     protected val importToken by literalToken("import")
 
     protected val nullToken by  literalToken("null")
+
+    protected val percentToken by literalToken("%")
+
+    protected val startsWithLiteral by (string and -percentToken).quotedParser()
+    protected val endsWithLiteral by (-percentToken and string).quotedParser()
 
     protected val doubleParser by (digitsToken and dot and digitsToken).map {
         "${it.t1}.${it.t3}".toDouble()
