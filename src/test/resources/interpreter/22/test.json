@@ -1,0 +1,7 @@
+{
+  "map": {
+    "some": true
+  },
+  "throws": "RecursiveImportException",
+  "expected": true
+}

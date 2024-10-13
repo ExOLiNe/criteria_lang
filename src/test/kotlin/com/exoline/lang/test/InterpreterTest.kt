@@ -18,7 +18,7 @@ class InterpreterTest {
         val interpreter = Interpreter { ref ->
             testsDir.resolve("${ref}.txt").readText()
         }
-        val only: Int = -1
+        val only: Int = 22//-1
         testsDir.listFiles()?.forEach {
             if (it.isDirectory) {
                 if (only == -1 || it.name == only.toString()) {
@@ -47,7 +47,9 @@ class InterpreterTest {
                         } catch(ex: ParseException) {
                             throw Exception("Test#${it.name} failed with parse exception", ex)
                         } catch(ex: Exception) {
-                            throw Exception("Test#${it.name} failed with exception", ex)
+                            test["throws"]?.textValue()?.let { exceptionName ->
+                                Assertions.assertEquals(exceptionName, ex.javaClass.simpleName, "Test#${it.name} must throw $exceptionName")
+                            } ?: throw Exception("Test#${it.name} failed with exception", ex)
                         }
                     }
                 }

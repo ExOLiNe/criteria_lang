@@ -1,5 +1,6 @@
 package com.exoline.lang
 
+import com.exoline.lang.exception.RecursiveImportException
 import com.exoline.lang.parser.AbstractGrammar
 import com.exoline.lang.parser.ArithmeticParser
 import com.exoline.lang.parser.BooleanParser
@@ -25,10 +26,13 @@ class Interpreter(
     private val identifiers = mutableMapOf<String, F>()
     private val identifiersValues = mutableMapOf<String, Any?>()
 
+    private val imports = mutableSetOf<String>()
+
     private fun resetState() {
         fields.clear()
         identifiers.clear()
         identifiersValues.clear()
+        imports.clear()
     }
 
     private val fieldParser: Parser<String> by separated(string, divToken).map {
@@ -94,6 +98,10 @@ class Interpreter(
     }
 
     private val importStatement: Parser<String> by -importToken and string.map {
+        if (it in imports) {
+            throw RecursiveImportException("Recursive imports not allowed")
+        }
+        imports += it
         importResolver?.invoke(it)?.let { codeText ->
             parseOrThrow(statement, codeText)
             it

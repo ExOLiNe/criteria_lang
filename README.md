@@ -16,5 +16,4 @@ $some == 20
 - `contains` operator
 - dates support
   - `olderThan`, `newerThan` operators
-- detect import statement recursion
 - fix identifier true/false assignment

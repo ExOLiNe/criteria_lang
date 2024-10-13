@@ -1,0 +1,2 @@
+import header22;
+object['some'] != false
