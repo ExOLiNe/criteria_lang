@@ -1,0 +1,1 @@
+object['someArr'] contains 'value' && object['someArr2'] !contains 'value2'

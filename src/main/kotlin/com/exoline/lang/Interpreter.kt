@@ -9,10 +9,10 @@ import me.alllex.parsus.parser.*
 
 data class ParseResult(
     val fields: Set<String>,
-    val app: AppResult
+    val app: AppF
 ) {
     data class AppResult(
-        val function: BoolF,
+        val result: Boolean,
         val identifiersValues: Map<String, Any?>
     )
 }
@@ -97,6 +97,12 @@ class Interpreter(
         ((l as? String?)?.endsWith(r as String) ?: false).not()
     }
 
+    private val containsExpr by functionParser.infixFunctionCall("contains", term, term) { l, r ->
+        (l as? Collection<*>?)?.contains(r) ?: false
+    } or functionParser.infixFunctionCall("!contains", term, term) { l, r ->
+        ((l as? Collection<*>?)?.contains(r) ?: false).not()
+    }
+
     private val importStatement: Parser<String> by -importToken and string.map { importRef ->
         if (importRef in imports) {
             throw RecursiveImportException("Recursive imports not allowed")
@@ -114,22 +120,22 @@ class Interpreter(
 
     val boolExpr by BooleanParser(
         term,
-        listOf(likeExpr, inArrayBoolExpr, objectAccessParser, identifierAccess)).root
+        listOf(likeExpr, containsExpr, inArrayBoolExpr, objectAccessParser, identifierAccess)).root
 
     override val root: Parser<ParseResult> by parser {
         resetState()
         statement()
         val result = boolExpr()
-        val function: BoolF = { it ->
+        val function: AppF = { it ->
             val value = result(it)
             if (value !is Boolean) {
                 throw RuntimeException("OMG!")
             }
-            value
+            ParseResult.AppResult(value, identifiersValues)
         }
         ParseResult(
             fields = fields,
-            app = ParseResult.AppResult(function, identifiersValues)
+            app = function
         )
     }
 }

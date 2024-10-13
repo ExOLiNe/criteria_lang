@@ -30,8 +30,8 @@ class DevelopmentTest {
         val interpreter = Interpreter()
         val app = interpreter.parseOrThrow(
             getFile("development/code.txt").readText()
-        ).app.function
+        ).app
         val map = mapper.convertValue<JObject>(mapOf("some" to 10))
-        println(app(map))
+        println(app(map).result)
     }
 }

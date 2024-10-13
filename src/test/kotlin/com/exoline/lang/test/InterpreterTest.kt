@@ -30,7 +30,7 @@ class InterpreterTest {
                         val expectedResult = (test["expected"] as? BooleanNode)?.booleanValue()!!
                         try {
                             val (actualFields, appResult) = interpreter.parseOrThrow(appStr)
-                            val actualResult = appResult.function(map)
+                            val (actualResult, identifiersValues) = appResult(map)
                             val expectedFields = (test["fields"] as? ArrayNode)?.map {
                                 (it as TextNode).textValue()
                             }?.toSet()
@@ -41,7 +41,7 @@ class InterpreterTest {
                                 identifier to value.toAny()
                             }?.toMap()
                             if (expectedIdentifiersValues != null) {
-                                Assertions.assertEquals(expectedIdentifiersValues, appResult.identifiersValues, "Test#${it.name}")
+                                Assertions.assertEquals(expectedIdentifiersValues, identifiersValues, "Test#${it.name}")
                             }
                             Assertions.assertEquals(expectedResult, actualResult, "Test#${it.name}")
                         } catch(ex: ParseException) {

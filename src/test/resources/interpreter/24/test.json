@@ -1,0 +1,7 @@
+{
+  "map": {
+    "someArr": ["blabla", "value", "something"],
+    "someArr2": []
+  },
+  "expected": true
+}

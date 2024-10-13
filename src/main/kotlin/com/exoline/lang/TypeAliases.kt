@@ -10,6 +10,7 @@ typealias JElement = JsonNode
 typealias JArray = ArrayNode
 
 typealias VarType = JObject
+typealias AppF = (VarType) -> ParseResult.AppResult
 typealias F = (VarType) -> Any?
 typealias BoolF = (VarType) -> Boolean
 typealias PF = Parser<F>
