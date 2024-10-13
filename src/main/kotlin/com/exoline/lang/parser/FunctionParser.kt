@@ -1,6 +1,7 @@
 package com.exoline.lang.parser
 
 import com.exoline.lang.*
+import com.exoline.lang.exception.InsufficientArgumentsException
 import me.alllex.parsus.parser.*
 import me.alllex.parsus.token.literalToken
 import java.time.LocalDateTime
@@ -26,7 +27,7 @@ class FunctionParser(
         return -literalToken(funcToken) and
                 (-parL and args and -parR).map { argResolvers ->
                     if (argResolvers.size < defaultsStartFromIndex) {
-                        throw IllegalArgumentException("Function $funcToken called with " +
+                        throw InsufficientArgumentsException("Function $funcToken called with " +
                                 "insufficient parameters. Expected: ${defaultsStartFromIndex}," +
                                 "but got: ${argResolvers.size}")
                     }
@@ -85,5 +86,11 @@ class FunctionParser(
         (args[0] as String) + (args[1] as String)
     }
 
-    override val root: Parser<F> by dateParser or sizeCallParser  or dummy
+    val dummy2 by functionCall(
+        "dummy2",
+        0
+    ) {
+    }
+
+    override val root: Parser<F> by dateParser or sizeCallParser  or dummy or dummy2
 }

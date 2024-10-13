@@ -1,0 +1,6 @@
+{
+  "map": {
+  },
+  "throws": "InsufficientArgumentsException",
+  "expected": true
+}

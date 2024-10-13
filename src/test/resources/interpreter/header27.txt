@@ -1,0 +1,2 @@
+$some = 'hello';
+$some2 = 10;
