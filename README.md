@@ -17,3 +17,4 @@ $some == 20
 - fix equals/notEquals for date comparison
 - fix identifier true/false assignment
 - add test: function call with insufficient args
+- fix: move identifierValues to app call result (next to Boolean result)

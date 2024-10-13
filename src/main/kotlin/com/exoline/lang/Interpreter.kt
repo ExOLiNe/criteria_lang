@@ -97,15 +97,15 @@ class Interpreter(
         ((l as? String?)?.endsWith(r as String) ?: false).not()
     }
 
-    private val importStatement: Parser<String> by -importToken and string.map {
-        if (it in imports) {
+    private val importStatement: Parser<String> by -importToken and string.map { importRef ->
+        if (importRef in imports) {
             throw RecursiveImportException("Recursive imports not allowed")
         }
-        imports += it
-        importResolver?.invoke(it)?.let { codeText ->
+        imports += importRef
+        importResolver?.invoke(importRef)?.let { codeText ->
             parseOrThrow(statement, codeText)
-            it
-        } ?: throw Exception("Import $it can't be resolved")
+            importRef
+        } ?: throw Exception("Import $importRef can't be resolved")
     }
 
     private val statement by
