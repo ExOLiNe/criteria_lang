@@ -33,16 +33,16 @@ abstract class AbstractGrammar<T>(
         { l: Any?, r: Any? -> l != r }
     }
     protected val greaterThan by literalToken(">").map {
-        { l: Any?, r: Any? -> (l as Number) > (r as Number) }
+        { l: Any?, r: Any? -> l > r }
     }
     protected val greaterThanEquals by literalToken(">=").map {
-        { l: Any?, r: Any? -> (l as Number) >= (r as Number) }
+        { l: Any?, r: Any? -> l >= r }
     }
     protected val lessThan by literalToken("<").map {
-        { l: Any?, r: Any? -> (l as Number) < (r as Number) }
+        { l: Any?, r: Any? -> l < r }
     }
     protected val lessThanEquals by literalToken("<=").map {
-        { l: Any?, r: Any? -> (l as Number) <= (r as Number) }
+        { l: Any?, r: Any? -> l <= r }
     }
     protected val quote by literalToken("'")
     protected val doubleQuote by literalToken("\"")

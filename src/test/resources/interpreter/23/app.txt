@@ -1,0 +1,4 @@
+$before = date(1999, 1);
+$after = date(2000, 2, 1, 1, 1);
+object['someDate'] < $after
+    && object['someDate'] > $before

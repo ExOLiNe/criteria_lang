@@ -15,10 +15,10 @@ class InterpreterTest {
     @Test
     fun test() {
         val testsDir = getFile("interpreter")
-        val interpreter = Interpreter { ref ->
+        val interpreter = Interpreter{ ref ->
             testsDir.resolve("${ref}.txt").readText()
         }
-        val only: Int = 22//-1
+        val only: Int = -1
         testsDir.listFiles()?.forEach {
             if (it.isDirectory) {
                 if (only == -1 || it.name == only.toString()) {

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.node.NullNode
 import com.fasterxml.jackson.databind.node.TextNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import java.time.Instant
 
 infix fun Number.plus(other: Number): Number {
     return when(this) {
@@ -87,6 +88,16 @@ operator fun Number.compareTo(other: Number): Int {
         }
         else -> TODO("Not implemented yet")
     }
+}
+
+operator fun Number.compareTo(instant: Instant): Int = compareTo(instant.epochSecond.toInt())
+
+operator fun Any?.compareTo(other: Any?): Int = when {
+    this == null && other == null -> 0
+    this is Number && other is Number -> compareTo(other)
+    this is Number && other is Instant -> compareTo(other)
+    this is String && other is String -> compareTo(other)
+    else -> throw IllegalArgumentException("Incomparable types")
 }
 
 fun VarType.getRecursively(field: String): Any? {

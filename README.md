@@ -14,6 +14,6 @@ $some == 20
 ## TODO
 - `in range` operator for numbers
 - `contains` operator
-- dates support
-  - `olderThan`, `newerThan` operators
+- fix equals/notEquals for date comparison
 - fix identifier true/false assignment
+- add test: function call with insufficient args
