@@ -20,3 +20,4 @@ $some == 20
 - dates support
   - `olderThan`, `newerThan` operators
 - detect import statement recursion
+- fix identifier true/false assignment
